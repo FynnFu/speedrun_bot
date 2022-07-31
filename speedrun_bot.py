@@ -24,6 +24,9 @@ class Bot:
     # длительное подключение
     long_poll = None
 
+    # пометка авторизованности
+    authorized = False
+
     def __init__(self):
         """
         Инициализация бота при помощи получения доступа к API ВКонтакте
@@ -31,14 +34,25 @@ class Bot:
         # загрузка информации из .env-файла
         load_dotenv()
 
+        session_api = self.do_auth()
+
+        if self.session_api is not None:
+            self.authorized = True
+
+    def do_auth(self):
+        """
+        Авторизация за пользователя (не за группу или приложение)
+        Использует переменную, хранящуюся в файле настроек окружения .env в виде строки ACCESS_TOKEN="1q2w3e4r5t6y7u8i9o..."
+        :return: возможность работать с API
+        """
         token = os.getenv("token")
-
-        # авторизация
-        vk_session = vk_api.VkApi(token=token)
-
-        session_api = vk_session.get_api()
-
-        long_poll = VkLongPoll(vk_session)
+        try:
+            self.vk_session = vk_api.VkApi(token=token)
+            self.long_poll = VkLongPoll(self.vk_session)
+            return self.vk_session.get_api()
+        except Exception as error:
+            print("auth_err: " + str(error))
+            return None
 
     def get_but(self):
         return {"action": {"type": "location", "payload": ""}}
